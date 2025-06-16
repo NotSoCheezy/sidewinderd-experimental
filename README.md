@@ -29,7 +29,7 @@ with the manual installation from source:
 1. Install the following dependencies. Please refer to your specific Linux
 distribution, as package names might differ.
 
-  * cmake 2.8.8 (make)
+  * cmake 3.10 (make)
   * libconfig 1.4.9
   * tinyxml2 2.2.0
   * libudev 210
