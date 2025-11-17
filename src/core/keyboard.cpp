@@ -116,14 +116,25 @@ void Keyboard::recordMacro(std::string path, Led *ledRecord, const int keyRecord
 		read(evfd_, &inev, sizeof(struct input_event));
 
 		if (inev.type == EV_KEY && inev.value != 2) {
-			/* only capturing delays, if capture_delays is set to true */
-			if (prev.tv_usec && config_->lookup("capture_delays")) {
-				auto diff = (inev.time.tv_usec + 1000000 * inev.time.tv_sec) - (prev.tv_usec + 1000000 * prev.tv_sec);
-				auto delay = diff / 1000;
-				/* start element "DelayEvent" */
-				tinyxml2::XMLElement* DelayEvent = doc.NewElement("DelayEvent");
-				DelayEvent->SetText(static_cast<int>(delay));
-				root->InsertEndChild(DelayEvent);
+			/* capture delays if enabled; otherwise, insert default_delay if configured */
+			if (prev.tv_usec) {
+				bool capture = false;
+				try { capture = config_->lookup("capture_delays"); } catch (...) { capture = true; }
+				int default_delay = 0;
+				try { default_delay = config_->lookup("default_delay"); } catch (...) { default_delay = 0; }
+				int delay_to_write = -1;
+				if (capture) {
+					auto diff = (inev.time.tv_usec + 1000000 * inev.time.tv_sec) - (prev.tv_usec + 1000000 * prev.tv_sec);
+					delay_to_write = static_cast<int>(diff / 1000);
+				} else if (default_delay > 0) {
+					delay_to_write = default_delay;
+				}
+				if (delay_to_write >= 0) {
+					/* start element "DelayEvent" */
+					tinyxml2::XMLElement* DelayEvent = doc.NewElement("DelayEvent");
+					DelayEvent->SetText(delay_to_write);
+					root->InsertEndChild(DelayEvent);
+				}
 			}
 
 			/* start element "KeyBoardEvent" */
